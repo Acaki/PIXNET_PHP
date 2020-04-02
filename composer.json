@@ -1,0 +1,19 @@
+{
+  "name": "pixnet/questions",
+  "description": "description",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "axsz4",
+      "email": "email@example.com"
+    }
+  ],
+  "require": {
+  },
+  "autoload": {
+    "psr-4": {
+      "Q3\\": "Q3"
+    }
+  }
+}
