@@ -1,8 +1,7 @@
 <?php
 
-namespace Q2;
+namespace Q2\Forwarders;
 
-require_once 'FreightForwarder.php';
 class Dog extends FreightForwarder
 {
     const REALM_FEE = [

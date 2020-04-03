@@ -11,9 +11,19 @@
   ],
   "require": {
   },
+  "require-dev": {
+    "phpunit/phpunit": "^9.1"
+  },
   "autoload": {
     "psr-4": {
-      "Q3\\": "Q3"
+      "Q3\\": "Q3/",
+      "Q2\\": "Q2/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Q2\\": "Q2/",
+      "Q4\\": "Q4/"
     }
   }
 }

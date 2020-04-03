@@ -1,8 +1,7 @@
 <?php
 
-namespace Q2;
+namespace Q2\Forwarders;
 
-require_once 'FreightForwarderInterface.php';
 abstract class FreightForwarder implements FreightForwarderInterface
 {
     private $basicFee;
@@ -13,8 +12,8 @@ abstract class FreightForwarder implements FreightForwarderInterface
         if (!isset(static::REALM_FEE[$realm])) {
             throw new \InvalidArgumentException("The freight forwarder does not provide service in {$realm}");
         }
-        $this->basicFee = static::REALM_FEE[$realm]['basic_fee'];
-        $this->weightFee = static::REALM_FEE[$realm]['weight_fee'];
+        $this->basicFee = static::REALM_FEE[$realm]['basic_fee'] ?? 0;
+        $this->weightFee = static::REALM_FEE[$realm]['weight_fee'] ?? 0;
     }
 
     public function getBasicFee()
