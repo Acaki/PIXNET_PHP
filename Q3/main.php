@@ -2,7 +2,9 @@
 
 namespace Q3;
 
-require_once '../vendor/autoload.php';
+use function foo\func;
+
+require_once 'vendor/autoload.php';
 
 function powerSet($array)
 {
@@ -37,6 +39,9 @@ while (true) {
     $map = [];
     while (($row = readline('Enter a map: ')) !== 'end') {
         $map[] = str_split($row);
+        if ($row === 'exit') {
+            exit(0);
+        }
     }
 
     // Get coordinates of mouses and their symbols
@@ -44,11 +49,11 @@ while (true) {
     $mouseSymbols = ['X', 'Y', 'Z'];
     $start = [0, 0];
     foreach ($map as $idx => $row) {
-        if ($target = array_search('C', $row)) {
+        if (($target = array_search('C', $row)) !== false) {
             $start = [$idx, $target];
         }
         foreach ($mouseSymbols as $mouseSymbol) {
-            if ($target = array_search($mouseSymbol, $row)) {
+            if (($target = array_search($mouseSymbol, $row)) !== false) {
                 $mouseLocations[$mouseSymbol] = [$idx, $target];
             }
         }
@@ -96,6 +101,9 @@ while (true) {
     // Calculate Final g(i, S), where i = start and S = all mouse locations
     foreach ($mouseLocations as $mouseLocation) {
         $prevToCurrent = count((new AStar($map, $mouseLocation, $start))->run()) - 2;
+        if ($prevToCurrent < 0) {
+            $prevToCurrent = INF;
+        }
         $minSetToCurrent = getCost($allMouseLocations, $mouseLocation, $minCostDp);
         $cost = $prevToCurrent + $minSetToCurrent;
         if ($cost < $min) {
@@ -120,7 +128,7 @@ while (true) {
         $startKey = getIndex($startValue, $allMouseLocations);
         $cost = $min - $minCostDp[$startKey];
         $min = $minCostDp[$startKey];
-        if ($mouseName = array_search($startValue, $mouseLocations)) {
+        if (($mouseName = array_search($startValue, $mouseLocations)) !== false) {
             print_r($cost . $mouseName);
         }
         $startValue = $parent[$startKey];
