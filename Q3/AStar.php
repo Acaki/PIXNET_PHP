@@ -11,8 +11,8 @@ class AStar
         [0, -1],
     ];
     private array $map;
-    private Node $start;
-    private Node $end;
+    private array $start;
+    private array $end;
 
     public function __construct($map, $start, $end)
     {
@@ -23,73 +23,56 @@ class AStar
 
     public function run()
     {
-        $openedNodes = $closedNodes = [];
-        $openedNodes[] = $this->start;
+        // Record nodes to be expanded or already expanded
+        $openSet = new CoordinatesPriorityQueue();
+        $openSet->insert($this->start, 0);
+        $closeSet = $cameFrom = $gScore = $fScore = [];
+        $gScore[serialize($this->start)] = 0;
+        $fScore[serialize($this->start)] = $this->getEstimateDistance($this->start);
 
-        while (count($openedNodes)) {
-            $currentIdx = 0;
-            $currentNode = $openedNodes[$currentIdx];
-            foreach ($openedNodes as $idx => $openedNode) {
-                if ($openedNode->f < $currentNode->f) {
-                    $currentIdx = $idx;
-                    $currentNode = $openedNode;
-                }
-            }
-            $closedNodes[] = $currentNode;
-            unset($openedNodes[$currentIdx]);
-            $openedNodes = array_values($openedNodes);
+        while ($openSet->valid()) {
+            // Pop position with minimum cost from the open set
+            $current = $openSet->extract();
+            $closeSet[] = serialize($current);
 
             foreach (self::DIRECTIONS as $direction) {
-                $newPosition = [$currentNode->position[0] + $direction[0], $currentNode->position[1] + $direction[1]];
-                if ($newPosition[0] > (count($this->map) - 1) || $newPosition[0] < 0 ||
-                    $newPosition[1] > (count($this->map[count($this->map) - 1]) - 1) || $newPosition[1] < 0) {
+                $neighbor = [$current[0] + $direction[0], $current[1] + $direction[1]];
+                // Check if the new position is out of map boundary
+                if ($neighbor[0] > (count($this->map) - 1) || $neighbor[0] < 0 ||
+                    $neighbor[1] > (count($this->map[count($this->map) - 1]) - 1) || $neighbor[1] < 0) {
                     continue;
                 }
-                $newNode = new Node($newPosition, $currentNode);
-                if ($newNode->position === $this->end->position) {
-                    $path = [];
-                    $current = $newNode;
+                // Check if we reached the target position
+                if ($neighbor === $this->end) {
+                    $path = [$neighbor];
                     while ($current) {
-                        $path[] = $current->position;
-                        $current = $current->parent;
+                        $path[] = $current;
+                        $current = $cameFrom[serialize($current)];
                     }
                     return array_reverse($path);
                 }
-                if ($this->map[$newNode->position[0]][$newNode->position[1]] !== '0') {
+                // Check if the new position is blocked or already closed
+                if ($this->map[$neighbor[0]][$neighbor[1]] !== '0' || in_array(serialize($neighbor), $closeSet)) {
                     continue;
                 }
 
-                $isNewNodeClosed = false;
-                foreach ($closedNodes as $closedNode) {
-                    if ($newNode->position === $closedNode->position) {
-                        $isNewNodeClosed = true;
-                        break;
-                    }
+                $tentativeGScore = $gScore[serialize($current)] + 1;
+                $neighborGScore = $gScore[serialize($neighbor)] ?? INF;
+                if ($tentativeGScore < $neighborGScore) {
+                    $cameFrom[serialize($neighbor)] = $current;
+                    $gScore[serialize($neighbor)] = $tentativeGScore;
+                    $neighborFScore = $tentativeGScore + $this->getEstimateDistance($neighbor);
+                    $fScore[serialize($neighbor)] = $neighborFScore;
+                    $openSet->insert($neighbor, $neighborFScore);
                 }
-                if ($isNewNodeClosed) {
-                    continue;
-                }
-
-                $newNode->g = $currentNode->g + 1;
-                $newNode->h = sqrt(pow($newNode->position[0] - $this->end->position[0], 2) +
-                    pow($newNode->position[1] - $this->end->position[1], 2));
-                $newNode->f = $newNode->g + $newNode->h;
-
-                $isChildOpenedAndFarther = false;
-                foreach ($openedNodes as $openedNode) {
-                    if ($newNode->position === $openedNode->position && $newNode->g > $openedNode->g) {
-                        $isChildOpenedAndFarther = true;
-                        break;
-                    }
-                }
-                if ($isChildOpenedAndFarther) {
-                    continue;
-                }
-
-                $openedNodes[] = $newNode;
             }
         }
 
         return [];
+    }
+
+    private function getEstimateDistance($start)
+    {
+        return sqrt(pow($start[0] - $this->end[0], 2) + pow($start[1] - $this->end[1], 2));
     }
 }

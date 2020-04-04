@@ -41,10 +41,10 @@ while (true) {
 
     $mouseLocations = [];
     $mouseSymbols = ['X', 'Y', 'Z'];
-    $start = new Node();
+    $start = [0, 0];
     foreach ($map as $idx => $row) {
         if ($target = array_search('C', $row)) {
-            $start->position = [$idx, $target];
+            $start = [$idx, $target];
         }
         foreach ($mouseSymbols as $mouseSymbol) {
             if ($target = array_search($mouseSymbol, $row)) {
@@ -60,9 +60,9 @@ while (true) {
                 continue;
             }
             $minCost = INF;
-            $minPrevNode = $start->position;
+            $minPrevNode = $start;
             foreach ($mouseCombination as $prevLocation) {
-                $prevToCurrent = count((new AStar($map, new Node($prevLocation), new Node($mouseLocation)))->run()) - 2;
+                $prevToCurrent = count((new AStar($map, $prevLocation, $mouseLocation))->run()) - 2;
                 if ($prevToCurrent < 0) {
                     $prevToCurrent = INF;
                 }
@@ -86,7 +86,7 @@ while (true) {
     $prevLocation = [];
     $positionSet = end($mouseCombinations);
     foreach ($mouseLocations as $mouseLocation) {
-        $prevToCurrent = count((new AStar($map, new Node($mouseLocation), $start))->run()) - 2;
+        $prevToCurrent = count((new AStar($map, $mouseLocation, $start))->run()) - 2;
         $minSetToCurrent = getCost($positionSet, $mouseLocation, $minCostDp);
         $cost = $prevToCurrent + $minSetToCurrent;
         if ($cost < $min) {
@@ -99,7 +99,7 @@ while (true) {
         print_r('無解');
     }
 
-    $parent[getIndex($start->position, $positionSet)] = $prevLocation;
+    $parent[getIndex($start, $positionSet)] = $prevLocation;
 
     $startValue = end($parent);
     reset($parent);
