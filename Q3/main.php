@@ -19,7 +19,7 @@ function powerSet($array)
 
 function getIndex($current, $set)
 {
-    return json_encode(['current' => $current, 'set' => $set]);
+    return serialize(['current' => $current, 'set' => $set]);
 }
 
 function getCost($locations, $prevLocation, $minCostDp)
@@ -39,6 +39,7 @@ while (true) {
         $map[] = str_split($row);
     }
 
+    // Get coordinates of mouses and their symbols
     $mouseLocations = [];
     $mouseSymbols = ['X', 'Y', 'Z'];
     $start = [0, 0];
@@ -52,21 +53,28 @@ while (true) {
             }
         }
     }
-    $mouseCombinations = powerSet($mouseLocations);
+    // {}, {mouse1}, {mouse2}, {mouse1, mouse2}, {mouse3}, ... , {mouse1, mouse2, mouse3}
+    $mouseLocationSets = powerSet($mouseLocations);
     $minCostDp = $parent = [];
-    foreach ($mouseCombinations as $mouseCombination) {
+    // DP formula: g(i, S) = min { C(i, k) + g(k, S - {k}) }, k ∈ S
+    // $mouseLocationSet = S
+    foreach ($mouseLocationSets as $mouseLocationSet) {
+        // $mouseLocation = i
         foreach ($mouseLocations as $mouseLocation) {
-            if (in_array($mouseLocation, $mouseCombination)) {
+            if (in_array($mouseLocation, $mouseLocationSet)) {
                 continue;
             }
             $minCost = INF;
             $minPrevNode = $start;
-            foreach ($mouseCombination as $prevLocation) {
+            // $prevLocation = k
+            foreach ($mouseLocationSet as $prevLocation) {
+                // Calculate C(i, k)
                 $prevToCurrent = count((new AStar($map, $prevLocation, $mouseLocation))->run()) - 2;
                 if ($prevToCurrent < 0) {
                     $prevToCurrent = INF;
                 }
-                $minSetToCurrent = getCost($mouseCombination, $prevLocation, $minCostDp);
+                // Calculate g(k, S - {k})
+                $minSetToCurrent = getCost($mouseLocationSet, $prevLocation, $minCostDp);
                 $cost = $prevToCurrent + $minSetToCurrent;
                 if ($cost < $minCost) {
                     $minCost = $cost;
@@ -74,20 +82,21 @@ while (true) {
                 }
             }
 
-            if (empty($mouseCombination)) {
+            if (empty($mouseLocationSet)) {
                 $minCost = 0;
             }
-            $index = getIndex($mouseLocation, $mouseCombination);
+            $index = getIndex($mouseLocation, $mouseLocationSet);
             $minCostDp[$index] = $minCost;
             $parent[$index] = $minPrevNode;
         }
     }
     $min = INF;
     $prevLocation = [];
-    $positionSet = end($mouseCombinations);
+    $allMouseLocations = end($mouseLocationSets);
+    // Calculate Final g(i, S), where i = start and S = all mouse locations
     foreach ($mouseLocations as $mouseLocation) {
         $prevToCurrent = count((new AStar($map, $mouseLocation, $start))->run()) - 2;
-        $minSetToCurrent = getCost($positionSet, $mouseLocation, $minCostDp);
+        $minSetToCurrent = getCost($allMouseLocations, $mouseLocation, $minCostDp);
         $cost = $prevToCurrent + $minSetToCurrent;
         if ($cost < $min) {
             $min = $cost;
@@ -99,21 +108,20 @@ while (true) {
         print_r('無解');
     }
 
-    $parent[getIndex($start, $positionSet)] = $prevLocation;
+    $parent[getIndex($start, $allMouseLocations)] = $prevLocation;
 
+    // Extract costs and mouse names from each minimum cost step
     $startValue = end($parent);
     reset($parent);
     while ($startValue) {
-        $key = array_search($startValue, $positionSet);
-        unset($positionSet[$key]);
-        $positionSet = array_values($positionSet);
-        $startKey = getIndex($startValue, $positionSet);
+        $key = array_search($startValue, $allMouseLocations);
+        unset($allMouseLocations[$key]);
+        $allMouseLocations = array_values($allMouseLocations);
+        $startKey = getIndex($startValue, $allMouseLocations);
         $cost = $min - $minCostDp[$startKey];
         $min = $minCostDp[$startKey];
-        if ($startValue) {
-            if ($mouseName = array_search($startValue, $mouseLocations)) {
-                print_r($cost . $mouseName);
-            }
+        if ($mouseName = array_search($startValue, $mouseLocations)) {
+            print_r($cost . $mouseName);
         }
         $startValue = $parent[$startKey];
     }
