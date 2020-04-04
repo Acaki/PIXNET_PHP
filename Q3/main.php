@@ -40,7 +40,7 @@ while (true) {
     while (($row = readline('Enter a map: ')) !== 'end') {
         $map[] = str_split($row);
         if ($row === 'exit') {
-            break;
+            exit(0);
         }
     }
 
